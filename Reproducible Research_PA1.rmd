@@ -1,0 +1,146 @@
+---
+title: "Reproducible Research_PA1"
+author: "Arunava Dalal"
+date: "November 24, 2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# 1. Loading and preprocessing the data
+
+### Unzip and load the filw
+
+```{r}
+act <- read.csv(unz("activity.zip","activity.csv"))
+act$date <- as.Date(act$date, format = "%Y-%m-%d")
+```
+
+# 2. What is mean total number of steps taken per day?
+
+In this section the missing values in the dataset have been ignored
+
+### Calculate total number of steps taken per day
+
+For this we have used the aggregate function and output stored in steps.daily.
+
+```{r}
+steps.daily <- aggregate(steps ~ date, rm.ma =TRUE, data = act, sum)
+```
+
+Sample of the output is given below
+
+```{r}
+head(steps.daily)
+```
+
+### Histogram of the total number of steps taken every day
+
+```{r}
+plot(steps.daily, type ="h", lwd = 8, lend = "butt")
+```
+
+### Mean and Median of the total number of steps taken per day 
+
+Output stored in steps.daily.mean and steps.daily.median respectively
+
+```{r}
+steps.daily.mean <- aggregate(steps ~ date, rm.ma =TRUE, data = act, mean)
+steps.daily.median <- aggregate(steps ~ date, rm.ma =TRUE, data = act, median)
+```
+
+Sample output shown below.
+
+```{r}
+head(steps.daily.mean)
+head(steps.daily.median)
+```
+
+# What is the average daily activity pattern?
+
+```{r}
+steps.interval <- aggregate(steps ~ interval, data = act, mean)
+plot(steps.interval, type = "l", lwd = 2)
+```
+
+### Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```{r}
+max(act$step, na.rm = TRUE)
+```
+
+# Inputting missing values
+
+#### Calculating the count of missing values
+
+```{r}
+sum(is.na(act))
+```
+
+### For filling up the missing values, I will be replacing the missing values with the mean of the variable act$step
+
+```{r}
+act1 <- act
+act1$steps[is.na(act1$steps)] <- mean(na.omit(act$steps))
+act1$date <- as.Date(act1$date, format = "%Y-%m-%d")
+```
+
+act1 is the new dataset where all missing values have been filled in.
+
+### Plotting a histogram on the new dataset.
+
+To compare the datasets i.e with missing values and without missing values, I am plotting both the histograms.
+
+```{r}
+steps.daily.1 <- aggregate(steps ~ date, data = act1, sum)
+par(mfrow = c(1,2))
+plot(steps.daily, type ="h", lwd = 8, lend = "butt", main = "Daywise steps with NAs")
+plot(steps.daily.1, type ="h", lwd = 8, lend = "butt", main = "Daywise steps without NAs")
+
+```
+
+### Calculating the mean and median of the new dataset.
+
+```{r}
+steps.daily.mean.1 <- aggregate(steps ~ date, data = act1, mean)
+steps.daily.median.1 <- aggregate(steps ~ date, data = act1, median)
+```
+
+Checking the sample of the new files containing mean and median.
+
+```{r}
+head(steps.daily.mean.1)
+head(steps.daily.median.1)
+```
+
+### Comment
+
+1. The histogram with no missing values is continuous and obviously there is change in the daywise mean and median.
+2. In the new dataset, as there is no missing values, so days of non activity by the individual has been lost which maybe useful in some other analysis.
+
+# Are there differences in activity patterns between weekdays and weekends?
+
+### Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
+2 data sets have been created namely "weekday" and "weekend" which consits details of weekdays and weekends respectively.
+
+```{r}
+act1$wday <- as.factor(weekdays(act1$date))
+act1$wday.num <- as.POSIXlt(act1$date)$wday
+act1$weekday <- ifelse(act1$wday.num == 0 | act1$wday.num == 6, "weekend","weekday")
+weekday <- act1[act1$weekday == "weekday",]
+weekend <- act1[act1$weekday == "weekend",]
+```
+
+### Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+
+Aggregate function is used to get the average number of steps taken, averaged across weekdays and weekends.
+
+```{r}
+weekday_mean <- aggregate(steps ~ interval, data = weekday, FUN = mean)
+weekend_mean <- aggregate(steps ~ interval, data = weekend, FUN = mean)
+
+par(mfrow = c(2,1))
+plot(weekday_mean,type = "l", lwd = 2, main = "Weekday")
+plot(weekend_mean,type = "l", lwd = 2, main = "Weekend")
+```
